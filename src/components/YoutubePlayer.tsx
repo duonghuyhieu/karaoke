@@ -21,9 +21,32 @@ import { formatTime } from '@/lib/utils';
 // YouTube Player API types
 declare global {
   interface Window {
-    YT: any;
-    onYouTubeIframeAPIReady: () => void;
+    YT: {
+      Player: new (element: HTMLElement, config: unknown) => YTPlayer;
+      PlayerState: {
+        UNSTARTED: number;
+        ENDED: number;
+        PLAYING: number;
+        PAUSED: number;
+        BUFFERING: number;
+        CUED: number;
+      };
+    };
+    onYouTubeIframeAPIReady?: (() => void) | undefined;
   }
+}
+
+interface YTPlayer {
+  loadVideoById: (options: { videoId: string; startSeconds?: number; suggestedQuality?: string } | string) => void;
+  playVideo: () => void;
+  pauseVideo: () => void;
+  stopVideo: () => void;
+  seekTo: (seconds: number) => void;
+  setVolume: (volume: number) => void;
+  getVolume: () => number;
+  getCurrentTime: () => number;
+  getDuration: () => number;
+  getPlayerState: () => number;
 }
 
 export function YoutubePlayer() {
@@ -55,8 +78,7 @@ export function YoutubePlayer() {
     getCurrentSong,
     nextSong,
     previousSong,
-    queue,
-    currentIndex
+    queue
   } = useQueueStore();
 
   const currentSong = getCurrentSong();
@@ -99,11 +121,13 @@ export function YoutubePlayer() {
 
     return () => {
       // Don't remove script as it might be used by other components
-      window.onYouTubeIframeAPIReady = undefined;
+      if (window.onYouTubeIframeAPIReady) {
+        delete window.onYouTubeIframeAPIReady;
+      }
     };
   }, []);
 
-  const onPlayerReady = useCallback((event: any) => {
+  const onPlayerReady = useCallback((event: { target: YTPlayer }) => {
     const ytPlayer = event.target;
     ytPlayer.setVolume(volume);
     setLoading(false);
@@ -112,7 +136,7 @@ export function YoutubePlayer() {
     console.log('YouTube player ready');
   }, [volume, setLoading]);
 
-  const onPlayerStateChange = useCallback((event: any) => {
+  const onPlayerStateChange = useCallback((event: { data: number; target: YTPlayer }) => {
     const state = event.data;
     let playerState: PlayerState;
 
@@ -145,7 +169,7 @@ export function YoutubePlayer() {
     setPlayerState(playerState);
   }, [setPlayerState, setDuration, nextSong]);
 
-  const onPlayerError = useCallback((event: any) => {
+  const onPlayerError = useCallback((event: { data: number }) => {
     const errorCode = event.data;
     let errorMessage = 'Video playback error';
 
@@ -262,7 +286,7 @@ export function YoutubePlayer() {
     setVolume(newVolume);
   };
 
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+
 
   if (!currentSong) {
     return (

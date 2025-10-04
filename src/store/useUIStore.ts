@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { Song } from '@/store/useQueueStore';
 
 export type Theme = 'light' | 'dark' | 'system';
 
@@ -12,7 +13,7 @@ interface UIState {
 
   // Search state
   searchQuery: string;
-  searchResults: any[];
+  searchResults: Song[];
   isSearching: boolean;
   searchError: string | null;
 
@@ -30,7 +31,7 @@ interface UIState {
   setTheme: (theme: Theme) => void;
 
   setSearchQuery: (query: string) => void;
-  setSearchResults: (results: any[]) => void;
+  setSearchResults: (results: Song[]) => void;
   setSearching: (searching: boolean) => void;
   setSearchError: (error: string | null) => void;
   clearSearch: () => void;
@@ -41,7 +42,7 @@ interface UIState {
 
 export const useUIStore = create<UIState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       // Initial state
       isPanelOpen: false,
       theme: 'system',
@@ -73,7 +74,7 @@ export const useUIStore = create<UIState>()(
 
       // Search actions
       setSearchQuery: (query: string) => set({ searchQuery: query }),
-      setSearchResults: (results: any[]) => set({ searchResults: results }),
+      setSearchResults: (results: Song[]) => set({ searchResults: results }),
       setSearching: (searching: boolean) => set({ isSearching: searching }),
       setSearchError: (error: string | null) => set({ searchError: error }),
       clearSearch: () => set({

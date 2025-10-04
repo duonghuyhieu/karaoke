@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Music, X, Settings, Sun, Moon, Monitor } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Music, X, Sun, Moon, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { SongSearch } from '@/components/SongSearch';
 import { SongQueue } from '@/components/SongQueue';
 import { useUIStore, Theme } from '@/store/useUIStore';
 import { useQueueStore } from '@/store/useQueueStore';
 import { cn } from '@/lib/utils';
-import { PANEL_ANIMATION_DURATION, BUBBLE_SIZE, PANEL_WIDTH } from '@/lib/constants';
+import { BUBBLE_SIZE, PANEL_WIDTH } from '@/lib/constants';
 
 export function FloatingBubble() {
   const {
@@ -34,7 +34,7 @@ export function FloatingBubble() {
   // Handle bubble dragging on mobile
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!isMobile) return;
-    
+
     setIsDragging(true);
     const rect = bubbleRef.current?.getBoundingClientRect();
     if (rect) {
@@ -45,14 +45,14 @@ export function FloatingBubble() {
     }
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging || !isMobile) return;
 
     const newX = Math.max(0, Math.min(window.innerWidth - BUBBLE_SIZE, e.clientX - dragOffset.x));
     const newY = Math.max(0, Math.min(window.innerHeight - BUBBLE_SIZE, e.clientY - dragOffset.y));
 
     setBubblePosition({ x: newX, y: newY });
-  };
+  }, [isDragging, isMobile, dragOffset.x, dragOffset.y, setBubblePosition]);
 
   const handleMouseUp = () => {
     setIsDragging(false);
@@ -67,7 +67,7 @@ export function FloatingBubble() {
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isDragging, dragOffset]);
+  }, [isDragging, handleMouseMove]);
 
   // Close panel when clicking outside
   useEffect(() => {
@@ -105,17 +105,17 @@ export function FloatingBubble() {
 
   const bubbleStyle = isMobile
     ? {
-        position: 'fixed' as const,
-        left: `${bubblePosition.x}px`,
-        top: `${bubblePosition.y}px`,
-        zIndex: 40,
-      }
+      position: 'fixed' as const,
+      left: `${bubblePosition.x}px`,
+      top: `${bubblePosition.y}px`,
+      zIndex: 40,
+    }
     : {
-        position: 'fixed' as const,
-        bottom: '20px',
-        right: '20px',
-        zIndex: 40,
-      };
+      position: 'fixed' as const,
+      bottom: '20px',
+      right: '20px',
+      zIndex: 40,
+    };
 
   return (
     <>
@@ -142,7 +142,7 @@ export function FloatingBubble() {
       >
         <div className="w-full h-full flex items-center justify-center relative">
           <Music className="h-6 w-6" />
-          
+
           {/* Queue indicator */}
           {queue.length > 0 && (
             <div className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">

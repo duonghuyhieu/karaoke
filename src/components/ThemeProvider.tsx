@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useUIStore } from '@/store/useUIStore';
 import { isMobileDevice } from '@/lib/utils';
 

@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Search, Plus, Loader2, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useUIStore } from '@/store/useUIStore';
 import { useQueueStore, Song } from '@/store/useQueueStore';
 import { youtubeAPI } from '@/lib/youtube';
-import { debounce } from '@/lib/utils';
+
 import { SEARCH_DEBOUNCE_MS } from '@/lib/constants';
 
 export function SongSearch() {
@@ -21,13 +21,19 @@ export function SongSearch() {
     setSearching,
     setSearchError,
   } = useUIStore();
-  
+
   const { addToQueue } = useQueueStore();
   const [localQuery, setLocalQuery] = useState(searchQuery);
 
-  // Debounced search function
-  const debouncedSearch = useCallback(
-    debounce(async (query: string) => {
+  // Debounced search function using ref to avoid stale closures
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const debouncedSearch = useCallback((query: string) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    timeoutRef.current = setTimeout(async () => {
       if (!query.trim()) {
         setSearchResults([]);
         setSearching(false);
@@ -47,9 +53,8 @@ export function SongSearch() {
       } finally {
         setSearching(false);
       }
-    }, SEARCH_DEBOUNCE_MS),
-    [setSearchResults, setSearching, setSearchError]
-  );
+    }, SEARCH_DEBOUNCE_MS);
+  }, [setSearchResults, setSearching, setSearchError]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
@@ -132,7 +137,7 @@ export function SongSearch() {
         {!isSearching && searchQuery && searchResults.length === 0 && !searchError && (
           <div className="text-center py-8 text-muted-foreground">
             <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>No karaoke songs found for "{searchQuery}"</p>
+            <p>No karaoke songs found for &quot;{searchQuery}&quot;</p>
             <p className="text-xs mt-1">Try different keywords or check your spelling</p>
           </div>
         )}
@@ -142,7 +147,7 @@ export function SongSearch() {
           <div className="text-center py-8 text-muted-foreground">
             <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p>Search for your favorite karaoke songs</p>
-            <p className="text-xs mt-1">We'll automatically add "karaoke" to your search</p>
+            <p className="text-xs mt-1">We&apos;ll automatically add &quot;karaoke&quot; to your search</p>
           </div>
         )}
       </div>

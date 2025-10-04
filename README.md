@@ -1,24 +1,37 @@
 # 🎤 Karaoke Web App
 
-A modern karaoke web application built with Next.js 14+ that allows users to search for karaoke songs from YouTube, manage a playback queue, and sing along in fullscreen mode.
+A modern karaoke web application with real-time synchronization between host display and mobile remote controls. Built with Next.js 15, Prisma, Supabase, and Pusher Channels.
 
 ## ✨ Features
 
-- 🔍 **YouTube Integration**: Search for karaoke songs using YouTube Data API v3
-- 🎵 **Queue Management**: Add, remove, and reorder songs with drag-and-drop
-- 📺 **Fullscreen Player**: YouTube player with custom controls and fullscreen mode
-- 💬 **Floating UI**: Intuitive floating bubble interface with slide-out panel
-- 📱 **Mobile-First**: Responsive design optimized for all devices
-- 🎨 **Theme System**: Dark/light mode with system preference detection
-- ⌨️ **Keyboard Shortcuts**: Full keyboard navigation support
-- 🔄 **State Persistence**: Queue and preferences saved to localStorage
+### 🏠 Host Display
+- 📺 **TV-Optimized Interface**: Large screen display perfect for TVs and projectors
+- 🎵 **YouTube Player**: Embedded YouTube player with karaoke video playback
+- 📋 **Live Queue Display**: Real-time queue updates from mobile devices
+- 🎮 **Playback Controls**: Play, pause, skip, and stop controls
+- 🔴 **Room Management**: Create and manage karaoke rooms with unique codes
+
+### 📱 Mobile Remote Control
+- 🔍 **Song Search**: Search YouTube for karaoke songs
+- ➕ **Queue Management**: Add songs to queue, view upcoming songs
+- 🎮 **Remote Playback Control**: Control host playback from mobile device
+- 📱 **Mobile-Optimized**: Touch-friendly interface designed for phones
+- 🔗 **Room Joining**: Join karaoke sessions with 4-digit room codes
+
+### 🚀 Real-time Features
+- ⚡ **Live Synchronization**: Instant updates between host and mobile devices
+- 🔄 **Multi-room Support**: Multiple concurrent karaoke sessions
+- 📡 **Pusher Integration**: Real-time communication via Pusher Channels
+- 🗄️ **Database Persistence**: Songs and queues stored in Supabase/PostgreSQL
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
 - Node.js 18+
+- PostgreSQL database (or Supabase account)
 - YouTube Data API v3 key
+- Pusher Channels account
 
 ### Installation
 
@@ -33,31 +46,100 @@ cd karaoke
 npm install
 ```
 
-3. Set up environment variables:
+3. Set up your database:
+```bash
+# Generate Prisma client
+npx prisma generate
+
+# Run database migrations
+npx prisma migrate dev --name init
+```
+
+4. Set up environment variables:
 ```bash
 cp .env.example .env.local
 ```
 
-4. Add your YouTube API key to `.env.local`:
+5. Configure your `.env.local` file:
 ```env
-NEXT_PUBLIC_YOUTUBE_API_KEY=your_youtube_api_key_here
+# Database
+DATABASE_URL="postgresql://username:password@localhost:5432/karaoke?schema=public"
+
+# YouTube API
+NEXT_PUBLIC_YOUTUBE_API_KEY="your_youtube_api_key_here"
+
+# Pusher Channels
+NEXT_PUBLIC_PUSHER_APP_KEY="your_pusher_app_key"
+NEXT_PUBLIC_PUSHER_CLUSTER="your_pusher_cluster"
+PUSHER_APP_ID="your_pusher_app_id"
+PUSHER_SECRET="your_pusher_secret"
 ```
 
-5. Run the development server:
+6. Run the development server:
 ```bash
 npm run dev
 ```
 
-6. Open [http://localhost:3000](http://localhost:3000) in your browser.
+7. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## 🔑 Getting a YouTube API Key
+## 🏗️ Architecture
 
+### Dual-Route System
+- **`/host`**: TV/computer display interface for karaoke playback
+- **`/remote`**: Mobile controller interface for song management
+- **`/`**: Landing page with mode selection
+
+### Real-time Synchronization
+- **Pusher Channels**: WebSocket-based real-time communication
+- **Room-based Sessions**: Unique 4-digit room codes for multiple concurrent sessions
+- **Event Broadcasting**: Queue updates, playback controls, and song changes
+
+### Database Schema
+- **Songs**: YouTube video metadata and karaoke track information
+- **Rooms**: Karaoke session management with current song tracking
+- **Queue**: Per-room song queues with position ordering
+
+### API Routes
+- `POST /api/rooms` - Create new karaoke room
+- `GET /api/rooms?roomId=1234` - Get room details
+- `POST /api/rooms/[roomId]/queue` - Add song to queue
+- `DELETE /api/rooms/[roomId]/queue` - Remove song from queue
+- `POST /api/rooms/[roomId]/playback` - Control playback
+- `GET /api/songs/search` - Search YouTube for karaoke songs
+
+## 🔑 Setting up Required Services
+
+### YouTube Data API v3
 1. Go to the [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project or select an existing one
 3. Enable the YouTube Data API v3
 4. Create credentials (API key)
 5. Restrict the API key to YouTube Data API v3 (recommended)
-6. Add the API key to your `.env.local` file
+
+### Pusher Channels
+1. Sign up at [Pusher.com](https://pusher.com/)
+2. Create a new Channels app
+3. Copy the app credentials to your `.env.local` file
+
+### Database (Supabase)
+1. Sign up at [Supabase.com](https://supabase.com/)
+2. Create a new project
+3. Copy the database URL to your `.env.local` file
+4. Run `npx prisma migrate deploy` to set up tables
+
+## 🎯 How to Use
+
+### For Host (TV/Computer)
+1. Navigate to `/host` or click "Launch Host Display" on the home page
+2. Create a new room or join an existing one
+3. Share the 4-digit room code with participants
+4. Control playback using the on-screen controls or keyboard shortcuts
+
+### For Participants (Mobile)
+1. Navigate to `/remote` or click "Open Remote Control" on the home page
+2. Enter the 4-digit room code provided by the host
+3. Search for karaoke songs and add them to the queue
+4. Use playback controls to manage the session
 
 ## ⌨️ Keyboard Shortcuts
 

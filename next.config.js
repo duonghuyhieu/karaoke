@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Basic configuration only
+  // Clean config without experimental options
 };
 
-export default nextConfig;
+module.exports = nextConfig;

@@ -2,6 +2,30 @@ import { create } from 'zustand';
 
 export type PlayerState = 'unstarted' | 'ended' | 'playing' | 'paused' | 'buffering' | 'cued';
 
+interface YTPlayer {
+  loadVideoById: (options: { videoId: string; startSeconds?: number; suggestedQuality?: string } | string) => void;
+  playVideo: () => void;
+  pauseVideo: () => void;
+  stopVideo: () => void;
+  seekTo: (seconds: number, allowSeekAhead?: boolean) => void;
+  setVolume: (volume: number) => void;
+  getVolume: () => number;
+  getCurrentTime: () => number;
+  getDuration: () => number;
+  getPlayerState: () => number;
+}
+
+// Browser compatibility types
+interface ExtendedHTMLElement extends HTMLElement {
+  webkitRequestFullscreen?: () => Promise<void>;
+  msRequestFullscreen?: () => Promise<void>;
+}
+
+interface ExtendedDocument extends Document {
+  webkitExitFullscreen?: () => Promise<void>;
+  msExitFullscreen?: () => Promise<void>;
+}
+
 interface PlayerStoreState {
   // Player state
   playerState: PlayerState;
@@ -13,7 +37,7 @@ interface PlayerStoreState {
   error: string | null;
 
   // Player instance
-  player: any; // YouTube player instance
+  player: YTPlayer | null; // YouTube player instance
 
   // Actions
   setPlayerState: (state: PlayerState) => void;
@@ -23,7 +47,7 @@ interface PlayerStoreState {
   setDuration: (duration: number) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  setPlayer: (player: any) => void;
+  setPlayer: (player: YTPlayer | null) => void;
 
   // Player controls
   play: () => void;
@@ -57,7 +81,7 @@ export const usePlayerStore = create<PlayerStoreState>((set, get) => ({
   setDuration: (duration: number) => set({ duration }),
   setLoading: (loading: boolean) => set({ isLoading: loading }),
   setError: (error: string | null) => set({ error }),
-  setPlayer: (player: any) => set({ player }),
+  setPlayer: (player: YTPlayer | null) => set({ player }),
 
   // Player controls
   play: () => {
@@ -84,28 +108,28 @@ export const usePlayerStore = create<PlayerStoreState>((set, get) => ({
   toggleFullscreen: () => {
     const { isFullscreen } = get();
     const newFullscreenState = !isFullscreen;
-    
+
     if (newFullscreenState) {
       // Enter fullscreen
       const element = document.documentElement;
       if (element.requestFullscreen) {
         element.requestFullscreen();
-      } else if ((element as any).webkitRequestFullscreen) {
-        (element as any).webkitRequestFullscreen();
-      } else if ((element as any).msRequestFullscreen) {
-        (element as any).msRequestFullscreen();
+      } else if ((element as ExtendedHTMLElement).webkitRequestFullscreen) {
+        (element as ExtendedHTMLElement).webkitRequestFullscreen?.();
+      } else if ((element as ExtendedHTMLElement).msRequestFullscreen) {
+        (element as ExtendedHTMLElement).msRequestFullscreen?.();
       }
     } else {
       // Exit fullscreen
       if (document.exitFullscreen) {
         document.exitFullscreen();
-      } else if ((document as any).webkitExitFullscreen) {
-        (document as any).webkitExitFullscreen();
-      } else if ((document as any).msExitFullscreen) {
-        (document as any).msExitFullscreen();
+      } else if ((document as ExtendedDocument).webkitExitFullscreen) {
+        (document as ExtendedDocument).webkitExitFullscreen?.();
+      } else if ((document as ExtendedDocument).msExitFullscreen) {
+        (document as ExtendedDocument).msExitFullscreen?.();
       }
     }
-    
+
     set({ isFullscreen: newFullscreenState });
   },
 }));
