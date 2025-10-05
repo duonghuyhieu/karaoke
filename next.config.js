@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Clean config without experimental options
+  // Set output file tracing root to avoid workspace detection issues
+  outputFileTracingRoot: __dirname,
 };
 
 module.exports = nextConfig;
