@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "WebFetch(domain:supabase.com)",
+      "Bash(npm run build:*)",
+      "Bash(npm ci:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm install:*)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" npm run build)",
+      "Bash(npm run dev:*)",
+      "Bash(rm:*)",
+      "Bash(yarn install)",
+      "Bash(npx prisma generate:*)"
+    ],
+    "deny": []
+  }
+}
