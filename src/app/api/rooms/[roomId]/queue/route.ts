@@ -150,7 +150,7 @@ export async function POST(
     // Broadcast queue update (as fallback for immediate updates)
     const payload: QueueUpdatedPayload = {
       roomId,
-      queue: updatedQueue.map(item => ({
+      queue: updatedQueue.map((item: any) => ({
         id: item.id,
         position: item.position,
         song: {
@@ -238,7 +238,7 @@ export async function DELETE(
     // Broadcast queue update (as fallback for immediate updates)
     const payload: QueueUpdatedPayload = {
       roomId,
-      queue: updatedQueue.map(item => ({
+      queue: updatedQueue.map((item: any) => ({
         id: item.id,
         position: item.position,
         song: {

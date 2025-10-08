@@ -9,22 +9,34 @@ function createPrismaClient() {
   // Modify DATABASE_URL to disable prepared statements and connection pooling issues
   let databaseUrl = process.env.DATABASE_URL || ''
 
-  // Add multiple parameters to prevent prepared statement conflicts
-  const params = [
-    'prepared_statements=false',
-    'statement_cache_size=0',
-    'connection_limit=1',
-    'pool_timeout=0'
-  ]
+  // For Supabase pooler connections, we should use minimal parameters
+  // The pooler already handles connection pooling
+  const isPoolerConnection = databaseUrl.includes('pooler.supabase.com:6543')
+  
+  if (!isPoolerConnection) {
+    // Only add these parameters for direct connections
+    const params = [
+      'prepared_statements=false',
+      'statement_cache_size=0',
+      'connection_limit=5',
+      'pool_timeout=10'
+    ]
 
-  // Add parameters if not already present
-  params.forEach(param => {
-    const [key] = param.split('=')
-    if (!databaseUrl.includes(key)) {
+    // Add parameters if not already present
+    params.forEach(param => {
+      const [key] = param.split('=')
+      if (!databaseUrl.includes(key)) {
+        const separator = databaseUrl.includes('?') ? '&' : '?'
+        databaseUrl = `${databaseUrl}${separator}${param}`
+      }
+    })
+  } else {
+    // For pooler connections, only add minimal params
+    if (!databaseUrl.includes('pgbouncer=true')) {
       const separator = databaseUrl.includes('?') ? '&' : '?'
-      databaseUrl = `${databaseUrl}${separator}${param}`
+      databaseUrl = `${databaseUrl}${separator}pgbouncer=true`
     }
-  })
+  }
 
   console.log('🔧 Creating Prisma client with prepared statements disabled')
 

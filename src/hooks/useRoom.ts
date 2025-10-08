@@ -88,13 +88,15 @@ export function useRoom(roomId: string | null) {
       }
 
       const roomData = await response.json()
-      setRoom(roomData)
+      // Don't set room here, let the host page handle it after navigation
+      // setRoom(roomData)
+      // Don't set loading to false if we successfully created a room
+      // Let the fetchRoom handle that
       return roomData
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create room')
-      return null
-    } finally {
       setLoading(false)
+      return null
     }
   }, [])
 

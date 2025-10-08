@@ -29,8 +29,9 @@ export async function withRetry<T>(
         errorObj.message?.includes('duplicate prepared statement')
 
       if (isPreparedStatementError) {
-        console.log('🔧 Detected prepared statement conflict, attempting recovery...')
-        await handlePreparedStatementConflict(attempt, maxRetries)
+        console.log('🔧 Detected prepared statement conflict, will retry with delay...')
+        // Don't disconnect/reconnect, just wait and retry
+        // The connection pool should handle this
       }
 
       // Check for connection issues
@@ -73,7 +74,10 @@ async function handlePreparedStatementConflict(attempt: number, maxRetries: numb
     // Wait for cleanup to complete
     await new Promise(resolve => setTimeout(resolve, 500))
 
-    console.log('✅ Prepared statement cleanup completed')
+    // Reconnect with fresh connection
+    await prisma.$connect()
+
+    console.log('✅ Prepared statement cleanup completed and reconnected')
   } catch (cleanupError) {
     console.warn('⚠️ Error during prepared statement cleanup:', cleanupError)
     // Continue anyway, the retry might still work
@@ -156,10 +160,10 @@ export async function safeRawOperation<T>(
  * Execute a transaction with prepared statement conflict handling
  */
 export async function safeTransaction<T>(
-  operations: (client: PrismaClient) => Promise<T>
+  operations: (client: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$extends'>) => Promise<T>
 ): Promise<T> {
   return await withRetry(async (client) => {
-    return await client.$transaction(async (tx) => {
+    return await client.$transaction(async (tx: any) => {
       return await operations(tx)
     })
   }, 3, 300)
@@ -171,9 +175,43 @@ export async function safeTransaction<T>(
 export async function createRoomWithRawSQL(roomId: string): Promise<{ id: string; roomId: string; isActive: boolean; createdAt: Date; updatedAt: Date; currentSongId: string | null }> {
   console.log(`🏠 Creating room with roomId: ${roomId}`)
 
-  // Try Prisma ORM first (with prepared statements disabled)
+  // Try direct Prisma query without the safeDbOperation wrapper first
   try {
-    return await safeDbOperation(async (client) => {
+    console.log('📝 Attempting direct Prisma room creation...')
+    const room = await prisma.room.create({
+      data: {
+        roomId,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        roomId: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        currentSongId: true,
+      },
+    })
+    console.log(`✅ Room created successfully with direct Prisma: ${room.roomId}`)
+    return room
+  } catch (directError: any) {
+    console.warn('⚠️ Direct Prisma creation failed:', directError.message)
+    
+    // If it's a unique constraint error, the room already exists
+    if (directError.code === 'P2002') {
+      throw new Error(`Room ${roomId} already exists`)
+    }
+  }
+
+  // Create a timeout promise that rejects after 20 seconds (increased from 10)
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => reject(new Error('Room creation timeout after 20 seconds')), 20000)
+  })
+
+  // Try Prisma ORM with retry wrapper
+  try {
+    const roomPromise = safeDbOperation(async (client) => {
+      console.log('📝 Attempting Prisma room creation with retry wrapper...')
       const room = await client.room.create({
         data: {
           roomId,
@@ -191,11 +229,14 @@ export async function createRoomWithRawSQL(roomId: string): Promise<{ id: string
       console.log(`✅ Room created successfully with Prisma: ${room.roomId}`)
       return room
     })
+
+    // Race between room creation and timeout
+    return await Promise.race([roomPromise, timeoutPromise])
   } catch (prismaError) {
     console.warn('⚠️ Prisma room creation failed, falling back to raw SQL:', prismaError)
 
     // Fallback to raw SQL if Prisma fails
-    return await safeRawOperation<Array<{ id: string; roomId: string; isActive: boolean; createdAt: Date; updatedAt: Date; currentSongId: string | null }>>(
+    const rawSqlPromise = safeRawOperation<Array<{ id: string; roomId: string; isActive: boolean; createdAt: Date; updatedAt: Date; currentSongId: string | null }>>(
       `INSERT INTO "rooms" ("id", "roomId", "isActive", "createdAt", "updatedAt", "currentSongId")
        VALUES (gen_random_uuid(), $1, true, NOW(), NOW(), NULL)
        RETURNING "id", "roomId", "isActive", "createdAt", "updatedAt", "currentSongId"`,
@@ -205,6 +246,13 @@ export async function createRoomWithRawSQL(roomId: string): Promise<{ id: string
       console.log(`✅ Room created successfully with raw SQL: ${room.roomId}`)
       return room
     })
+
+    // Reset timeout for raw SQL fallback (increased to 20 seconds)
+    const rawSqlTimeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Raw SQL room creation timeout after 20 seconds')), 20000)
+    })
+
+    return await Promise.race([rawSqlPromise, rawSqlTimeoutPromise])
   }
 }
 

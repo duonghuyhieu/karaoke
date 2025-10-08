@@ -38,7 +38,7 @@ export async function POST(
     }
 
     // Find the queue item to move
-    const queueItem = room.queue.find(item => item.id === queueItemId)
+    const queueItem = room.queue.find((item: any) => item.id === queueItemId)
     if (!queueItem) {
       return NextResponse.json(
         { error: 'Queue item not found' },
@@ -85,7 +85,7 @@ export async function POST(
     }
 
     // Find the item that will be displaced
-    const displacedItem = room.queue.find(item => item.position === newPosition)
+    const displacedItem = room.queue.find((item: any) => item.position === newPosition)
     if (!displacedItem) {
       return NextResponse.json(
         { error: 'Invalid position' },
@@ -129,7 +129,7 @@ export async function POST(
     // Broadcast queue update
     const payload: QueueUpdatedPayload = {
       roomId,
-      queue: updatedQueue.map(item => ({
+      queue: updatedQueue.map((item: any) => ({
         id: item.id,
         position: item.position,
         song: {

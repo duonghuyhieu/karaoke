@@ -48,7 +48,7 @@ export async function POST(
     }
 
     // Validate that all provided queue items exist in the room
-    const existingItemIds = new Set(room.queue.map(item => item.id))
+    const existingItemIds = new Set(room.queue.map((item: any) => item.id))
     for (const item of queueItems) {
       if (!existingItemIds.has(item.id)) {
         return NextResponse.json(
@@ -59,7 +59,7 @@ export async function POST(
     }
 
     // Don't allow reordering the currently playing song (position 0)
-    const currentlyPlayingItem = room.queue.find(item => 
+    const currentlyPlayingItem = room.queue.find((item: any) =>
       item.position === 0 && room.currentSongId === item.songId
     )
     
@@ -77,7 +77,7 @@ export async function POST(
     }
 
     // Update positions using a transaction with temporary positions to avoid unique constraint violations
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       // Step 1: Move all items to temporary negative positions
       for (let i = 0; i < queueItems.length; i++) {
         const item = queueItems[i]
@@ -108,7 +108,7 @@ export async function POST(
     // Broadcast queue update
     const payload: QueueUpdatedPayload = {
       roomId,
-      queue: updatedQueue.map(item => ({
+      queue: updatedQueue.map((item: any) => ({
         id: item.id,
         position: item.position,
         song: {

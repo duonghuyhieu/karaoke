@@ -14,8 +14,8 @@ interface RoomSetupProps {
 
 export function RoomSetup({ onCreateRoom, onJoinRoom, loading, error }: RoomSetupProps) {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl mx-auto">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4" suppressHydrationWarning>
+      <div className="w-full max-w-2xl mx-auto" suppressHydrationWarning>
         {/* Header */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full mb-6">

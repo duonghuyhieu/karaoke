@@ -43,7 +43,7 @@ export async function POST(
     // Handle next/previous/auto-next actions
     if (action === 'next' || action === 'auto-next') {
       // Find current song in queue (should always be at position 0)
-      const currentQueueItem = room.queue.find(item => item.songId === room.currentSongId)
+      const currentQueueItem = room.queue.find((item: any) => item.song.id === room.currentSongId)
 
       if (currentQueueItem) {
         // Add the completed/skipped song to history
@@ -51,7 +51,7 @@ export async function POST(
           await prisma.historyItem.create({
             data: {
               roomId: room.id,
-              songId: currentQueueItem.songId,
+              songId: currentQueueItem.song.id,
               playedAt: new Date(),
               // For auto-next, we could potentially track duration played
               duration: action === 'auto-next' ? null : null,
@@ -89,7 +89,7 @@ export async function POST(
         })
 
         // Set the song at position 0 as the new current song (if any)
-        const newCurrentSong = updatedQueueItems.find(item => item.position === 0)
+        const newCurrentSong = updatedQueueItems.find((item: { position: number }) => item.position === 0)
 
         updatedRoom = await prisma.room.update({
           where: { id: room.id },
@@ -122,7 +122,7 @@ export async function POST(
         // Broadcast updated queue
         const queuePayload: QueueUpdatedPayload = {
           roomId,
-          queue: updatedQueueItems.map(item => ({
+          queue: updatedQueueItems.map((item: any) => ({
             id: item.id,
             position: item.position,
             song: {
@@ -141,7 +141,7 @@ export async function POST(
         console.log(`${action === 'auto-next' ? 'Auto-advanced' : 'Manually advanced'} to next song. Queue repositioned.`)
       } else if (room.queue.length > 0) {
         // No current song, start with first in queue (position 0)
-        const firstQueueItem = room.queue.find(item => item.position === 0)
+        const firstQueueItem = room.queue.find((item: any) => item.position === 0)
         if (firstQueueItem) {
           updatedRoom = await prisma.room.update({
             where: { id: room.id },
@@ -174,9 +174,9 @@ export async function POST(
       }
     } else if (action === 'previous') {
       // Find current song in queue and move to previous
-      const currentQueueItem = room.queue.find(item => item.songId === room.currentSongId)
+      const currentQueueItem = room.queue.find((item: any) => item.song.id === room.currentSongId)
       if (currentQueueItem && currentQueueItem.position > 0) {
-        const prevQueueItem = room.queue.find(item => item.position === currentQueueItem.position - 1)
+        const prevQueueItem = room.queue.find((item: any) => item.position === currentQueueItem.position - 1)
         if (prevQueueItem) {
           updatedRoom = await prisma.room.update({
             where: { id: room.id },
