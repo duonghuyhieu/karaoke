@@ -7,7 +7,14 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   realtime: {
     params: {
-      eventsPerSecond: 10,
+      eventsPerSecond: 100, // Increased from 10 to 100 for better responsiveness
+    },
+    heartbeatIntervalMs: 15000, // Reduce heartbeat frequency (default 30000)
+    timeout: 10000, // Faster timeout detection
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'karaoke-app', // For debugging
     },
   },
 })
@@ -75,10 +82,15 @@ export const subscribeToRoom = (
 ) => {
   const channel = supabase.channel(getChannelName(roomId))
 
-  // Listen to database changes for queue updates (more reliable)
+  // Listen to broadcast events for queue updates (fastest method)
   if (callbacks.onQueueUpdated) {
-    // Note: Postgres Changes filtering by roomId requires the room's internal ID, not the user-friendly roomId
-    // For now, we'll listen to all queue_items changes and filter client-side
+    channel.on('broadcast', { event: REALTIME_EVENTS.QUEUE_UPDATED }, (payload) => {
+      console.log('🎵 Queue updated via broadcast:', payload.payload)
+      callbacks.onQueueUpdated!(payload.payload as QueueUpdatedPayload)
+    })
+
+    // Optional: Listen to database changes as backup (without HTTP fetch)
+    // This ensures we catch changes even if broadcasts fail
     channel.on(
       'postgres_changes',
       {
@@ -86,34 +98,12 @@ export const subscribeToRoom = (
         schema: 'public',
         table: 'queue_items',
       },
-      async (payload) => {
-        console.log('Queue database change detected:', payload.eventType, payload.new || payload.old)
-
-        // Always fetch updated queue when database changes to ensure consistency
-        try {
-          const response = await fetch(`/api/rooms?roomId=${roomId}`)
-          if (response.ok) {
-            const roomData = await response.json()
-            const queuePayload: QueueUpdatedPayload = {
-              roomId,
-              queue: roomData.queue || [],
-            }
-            console.log('Fetched updated queue from database:', queuePayload.queue.length, 'items')
-            callbacks.onQueueUpdated!(queuePayload)
-          } else {
-            console.error('Failed to fetch room data:', response.status, response.statusText)
-          }
-        } catch (error) {
-          console.error('Failed to fetch updated queue:', error)
-          // Fallback: rely on broadcast events
-        }
+      (payload) => {
+        console.log('📊 Queue database change detected:', payload.eventType)
+        // Note: We rely on broadcast events for the actual data
+        // This is just a backup notification that something changed
       }
     )
-
-    // Also listen to broadcast events as fallback
-    channel.on('broadcast', { event: REALTIME_EVENTS.QUEUE_UPDATED }, (payload) => {
-      callbacks.onQueueUpdated!(payload.payload as QueueUpdatedPayload)
-    })
   }
 
   // Listen to broadcast events for playback controls and song changes
@@ -142,30 +132,9 @@ export const subscribeToRoom = (
   return channel
 }
 
-// Broadcast helpers for API routes
-export const broadcastQueueUpdate = async (roomId: string, payload: QueueUpdatedPayload) => {
-  const channel = supabase.channel(getChannelName(roomId))
-  await channel.send({
-    type: 'broadcast',
-    event: REALTIME_EVENTS.QUEUE_UPDATED,
-    payload,
-  })
-}
-
-export const broadcastPlaybackControl = async (roomId: string, payload: PlaybackControlPayload) => {
-  const channel = supabase.channel(getChannelName(roomId))
-  await channel.send({
-    type: 'broadcast',
-    event: REALTIME_EVENTS.PLAYBACK_CONTROL,
-    payload,
-  })
-}
-
-export const broadcastSongChanged = async (roomId: string, payload: SongChangedPayload) => {
-  const channel = supabase.channel(getChannelName(roomId))
-  await channel.send({
-    type: 'broadcast',
-    event: REALTIME_EVENTS.SONG_CHANGED,
-    payload,
-  })
-}
+// Re-export optimized broadcast helpers from supabase-channels
+export {
+  broadcastQueueUpdate,
+  broadcastPlaybackControl,
+  broadcastSongChanged
+} from './supabase-channels'

@@ -118,8 +118,9 @@ export function useRoom(roomId: string | null) {
         throw new Error(errorData.error || 'Failed to add song to queue')
       }
 
-      // Refresh room data to ensure queue is updated immediately
-      await fetchRoom(room.roomId)
+      // Don't fetch - rely on real-time updates for immediate feedback
+      // The broadcast event will update the UI faster than a HTTP fetch
+      // await fetchRoom(room.roomId)
 
       return true
     } catch (err) {
@@ -142,8 +143,9 @@ export function useRoom(roomId: string | null) {
         throw new Error(errorData.error || 'Failed to remove song from queue')
       }
 
-      // Refresh room data to ensure queue is updated immediately
-      await fetchRoom(room.roomId)
+      // Don't fetch - rely on real-time updates for immediate feedback
+      // The broadcast event will update the UI faster than a HTTP fetch
+      // await fetchRoom(room.roomId)
 
       return true
     } catch (err) {
@@ -195,8 +197,9 @@ export function useRoom(roomId: string | null) {
         throw new Error(errorData.error || 'Failed to reorder queue')
       }
 
-      // Refresh room data to ensure queue is updated immediately
-      await fetchRoom(room.roomId)
+      // Don't fetch - rely on real-time updates for immediate feedback
+      // The broadcast event will update the UI faster than a HTTP fetch
+      // await fetchRoom(room.roomId)
 
       return true
     } catch (err) {
@@ -223,8 +226,9 @@ export function useRoom(roomId: string | null) {
         throw new Error(errorData.error || 'Failed to bulk reorder queue')
       }
 
-      // Refresh room data to ensure queue is updated immediately
-      await fetchRoom(room.roomId)
+      // Don't fetch - rely on real-time updates for immediate feedback
+      // The broadcast event will update the UI faster than a HTTP fetch
+      // await fetchRoom(room.roomId)
 
       return true
     } catch (err) {

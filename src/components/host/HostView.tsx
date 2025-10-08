@@ -27,6 +27,35 @@ export function HostView({ room, connected, onReorderQueue }: HostViewProps) {
     return () => clearInterval(timer)
   }, [])
 
+  // Check if queue is empty and no current song
+  const isQueueEmpty = !room.currentSong && (!room.queue || room.queue.length === 0)
+
+  // Show black screen with message when queue is empty
+  if (isQueueEmpty) {
+    return (
+      <div className="fixed inset-0 bg-black flex flex-col items-center justify-center z-50">
+        <div className="text-center px-4">
+          <div className="mb-8">
+            <Music className="w-24 h-24 mx-auto text-white/20 mb-6" />
+          </div>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
+            Hãy chọn thêm bài hát
+          </h1>
+          <p className="text-lg md:text-xl text-white/60 mb-8">
+            Sử dụng điều khiển từ xa để thêm bài hát vào danh sách phát
+          </p>
+          <div className="flex items-center justify-center gap-3 px-6 py-4 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20">
+            <Users className="w-6 h-6 text-white/80" />
+            <span className="text-xl text-white/80">Mã phòng:</span>
+            <span className="text-3xl font-mono font-bold text-white">
+              {room.roomId}
+            </span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
